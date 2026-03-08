@@ -2,7 +2,7 @@
 
 import { useMemoFirebase, useCollection, useFirestore } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
-import { Professional } from '@/lib/data';
+import { Professional, initialProfessionals } from '@/lib/data';
 
 export function useProfessionals(tenantId: string = 'default') {
   const db = useFirestore();
@@ -13,7 +13,9 @@ export function useProfessionals(tenantId: string = 'default') {
   }, [db, tenantId]);
 
   const { data, isLoading } = useCollection<Professional>(professionalsRef);
-  const professionals = data || [];
+  
+  // Fallback para demo
+  const professionals = (data && data.length > 0) ? data : (tenantId === 'admin-tenant-1' ? initialProfessionals : []);
 
   const updateProfessionals = async (updatedProfessionals: Professional[]) => {
     if (!db || !tenantId) return;

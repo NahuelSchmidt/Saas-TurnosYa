@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemoFirebase, useDoc, useFirestore } from '@/firebase';
@@ -13,13 +12,20 @@ export function useSalon(salonId: string) {
     return doc(db, 'salons', salonId);
   }, [db, salonId]);
 
-  const { data: salon, isLoading } = useDoc<any>(salonRef);
+  const { data: rawSalon, isLoading } = useDoc<any>(salonRef);
+
+  // Fallback para demo
+  const salon = rawSalon || (salonId === 'admin-tenant-1' ? {
+    id: 'admin-tenant-1',
+    name: 'Barbería "El Estilo"',
+    primaryColor: '#000000',
+    address: 'Av. Corrientes 1234, CABA'
+  } : null);
 
   const updateSalon = (updates: any) => {
     if (!db || !salonId || salonId === 'default') return;
     const sRef = doc(db, 'salons', salonId);
     
-    // Usamos el patrón no bloqueante para mayor robustez
     setDocumentNonBlocking(sRef, { 
       ...updates, 
       updatedAt: serverTimestamp() 
