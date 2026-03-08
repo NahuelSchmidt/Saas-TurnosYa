@@ -49,7 +49,6 @@ export function Header() {
     }
   };
 
-  // Ítems de navegación públicos y de usuario estándar
   const navItems = [
     { href: "/", label: "Inicio", icon: Home },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

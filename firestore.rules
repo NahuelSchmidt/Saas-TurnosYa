@@ -19,14 +19,14 @@ service cloud.firestore {
     }
 
     function isGlobalAdmin() {
-      // Un usuario es admin global si su UID existe en la colección globalAdmins
+      // Verificación maestra: el UID del usuario debe existir en la colección globalAdmins
       return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
     function isSalonAdmin(salonData) {
       return isSignedIn() && (
-        (salonData.get('adminMembers', {}).get(request.auth.uid, false) == true) || 
-        (salonData.get('salonAdminMembers', {}).get(request.auth.uid, false) == true)
+        (salonData.keys().contains('adminMembers') && salonData.adminMembers[request.auth.uid] == true) || 
+        (salonData.keys().contains('salonAdminMembers') && salonData.salonAdminMembers[request.auth.uid] == true)
       );
     }
 
@@ -39,25 +39,25 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      // Permite que el usuario lea SU PROPIO permiso para que la App lo identifique
+      // Permite que cualquier usuario autenticado verifique su propio permiso
       allow get: if isSignedIn() && request.auth.uid == userId;
-      // Solo admins pueden ver la lista de otros admins
+      // Solo un admin global puede listar a otros admins
       allow list: if isGlobalAdmin();
-      // Solo editable desde consola por seguridad máxima
       allow write: if false; 
     }
 
     match /salons/{salonId} {
-      // El listado general para el Super Admin requiere ser Super Admin
-      // pero para el público permitimos 'get' si conocen el ID para reservar
-      allow get: if true; 
-      allow list: if isGlobalAdmin(); // Solo tú puedes ver la lista completa
+      // Acceso público para ver detalles del negocio y reservar
+      allow get, list: if true; 
       
+      // Solo usuarios registrados pueden crear un salón
       allow create: if isSignedIn(); 
+      
+      // Solo el dueño del salón o el Admin Global pueden editar/borrar
       allow update, delete: if resource != null && (isSalonAdmin(resource.data) || isGlobalAdmin());
       
       match /services/{serviceId} {
-        allow get, list: if true;
+        allow get, list: if true; 
         allow write: if isSignedIn(); 
       }
       
