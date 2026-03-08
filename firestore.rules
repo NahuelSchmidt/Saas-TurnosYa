@@ -38,24 +38,22 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isGlobalAdmin();
-      allow write: if false; // Only manageable via Firebase Console for safety
+      allow read: if isSignedIn(); // Permite verificar permisos
+      allow write: if false; // Solo vía consola
     }
 
     match /salons/{salonId} {
-      allow get, list: if true; // Public access to see business details
-      allow create: if isSignedIn(); // Allow registered admins to create their salon
+      allow get, list: if true; 
+      allow create: if isSignedIn(); 
       allow update, delete: if resource != null && (isSalonAdmin(resource.data) || isGlobalAdmin());
       
-      // Sub-collections: Services and Professionals
       match /services/{serviceId} {
-        allow get, list: if true; // Public can see services to book
+        allow get, list: if true;
         allow write: if isSignedIn(); 
       }
       
       match /professionals/{professionalId} {
-        allow get, list: if true; // Public can see professionals
+        allow get, list: if true;
         allow write: if isSignedIn();
       }
     }
