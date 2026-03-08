@@ -81,14 +81,22 @@ export default function SuperAdminPage() {
               <div className="bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20">
                 <p className="text-xs uppercase font-black tracking-widest text-muted-foreground mb-4">Tu Identificador Único (UID)</p>
                 <div className="flex items-center gap-3 bg-background border rounded-xl p-3 font-mono text-sm overflow-hidden">
-                  <span className="truncate flex-1 text-primary">{user?.uid || 'No identificado'}</span>
-                  <Button size="icon" variant="ghost" onClick={copyUid} className="shrink-0 h-8 w-8">
-                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  <span className="truncate flex-1 text-primary font-bold">{user?.uid || 'No identificado'}</span>
+                  <Button size="icon" variant="ghost" onClick={copyUid} className="shrink-0 h-10 w-10 hover:bg-primary/10">
+                    {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
-                  Copia este ID y crea un documento con este nombre en la colección <strong>globalAdmins</strong> dentro de tu Consola de Firebase para obtener acceso total.
-                </p>
+                <div className="text-left mt-6 space-y-4">
+                  <p className="text-sm font-bold">Pasos para activar tu acceso:</p>
+                  <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-2">
+                    <li>Copia el ID azul de arriba.</li>
+                    <li>Ve a tu <strong>Consola de Firebase</strong>.</li>
+                    <li>Entra en <strong>Firestore Database</strong>.</li>
+                    <li>Crea una colección llamada <code>globalAdmins</code>.</li>
+                    <li>Crea un documento usando tu ID como nombre.</li>
+                    <li>Refresca esta página.</li>
+                  </ol>
+                </div>
               </div>
               <Button asChild variant="outline" className="w-full h-14 rounded-2xl font-bold text-lg">
                 <Link href="/">Volver al Inicio</Link>
