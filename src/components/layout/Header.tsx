@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -9,6 +10,7 @@ import {
   UserCircle,
   Sun,
   Moon,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,13 +22,24 @@ import {
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 export function Header() {
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(false);
+  const { user } = useUser();
+  const db = useFirestore();
+
+  const globalAdminRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return doc(db, "globalAdmins", user.uid);
+  }, [db, user?.uid]);
+
+  const { data: globalAdminData } = useDoc(globalAdminRef);
+  const isGlobalAdmin = !!globalAdminData;
 
   useEffect(() => {
-    // Check initial theme from localStorage or system
     const theme = localStorage.getItem("theme");
     const isDarkMode = theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches);
     setIsDark(isDarkMode);
@@ -52,6 +65,10 @@ export function Header() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ];
 
+  if (isGlobalAdmin) {
+    navItems.push({ href: "/super-admin", label: "Super Admin", icon: ShieldAlert });
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center mx-auto px-4">
@@ -68,7 +85,7 @@ export function Header() {
               key={item.href}
               href={item.href}
               className={cn(
-                "transition-colors hover:text-primary",
+                "flex items-center gap-1 transition-colors hover:text-primary",
                 pathname === item.href ? "text-primary" : "text-muted-foreground"
               )}
             >

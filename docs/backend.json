@@ -218,6 +218,15 @@
         "name",
         "specialty"
       ]
+    },
+    "GlobalAdmin": {
+      "title": "GlobalAdmin",
+      "type": "object",
+      "description": "Special entity to designate super-users with access to all data.",
+      "properties": {
+        "uid": { "type": "string" },
+        "assignedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -270,6 +279,15 @@
           "entityName": "Appointment",
           "schema": {
             "type": "object"
+          }
+        }
+      },
+      {
+        "path": "/globalAdmins/{userId}",
+        "definition": {
+          "entityName": "GlobalAdmin",
+          "schema": {
+            "$ref": "#/backend/entities/GlobalAdmin"
           }
         }
       }
