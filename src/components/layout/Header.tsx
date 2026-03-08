@@ -31,6 +31,7 @@ export function Header() {
   const { user } = useUser();
   const db = useFirestore();
 
+  // Verificamos si el usuario actual es un administrador global
   const globalAdminRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return doc(db, "globalAdmins", user.uid);
@@ -65,6 +66,7 @@ export function Header() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ];
 
+  // Si es admin global, agregamos el acceso al panel central
   if (isGlobalAdmin) {
     navItems.push({ href: "/super-admin", label: "Panel Global", icon: ShieldAlert });
   }

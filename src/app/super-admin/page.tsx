@@ -23,7 +23,7 @@ export default function SuperAdminPage() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  // Check global admin status
+  // Verificamos si el usuario actual existe en la colección de administradores globales
   const globalAdminRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return doc(db, "globalAdmins", user.uid);
@@ -31,7 +31,7 @@ export default function SuperAdminPage() {
 
   const { data: globalAdminData, isLoading: isAdminChecking } = useDoc(globalAdminRef);
 
-  // Fetch all salons
+  // Obtenemos todos los negocios del sistema
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !globalAdminData) return null;
     return query(collection(db, "salons"), orderBy("createdAt", "desc"));
@@ -61,6 +61,7 @@ export default function SuperAdminPage() {
     );
   }
 
+  // Si no tiene permisos, mostramos la guía de activación
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
@@ -110,19 +111,20 @@ export default function SuperAdminPage() {
     );
   }
 
+  // Si tiene permisos, mostramos el Panel Global
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2">Panel Global</h1>
+            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2 text-foreground">Panel Global</h1>
             <p className="text-muted-foreground text-lg">Monitoreo centralizado de todos los negocios en TurnosYa.</p>
           </div>
           <div className="flex items-center gap-4 bg-primary/10 px-6 py-3 rounded-[2rem] border border-primary/20 shadow-inner">
             <Store className="w-6 h-6 text-primary" />
             <div className="flex flex-col">
-              <span className="font-black text-2xl leading-none">{allSalons?.length || 0}</span>
+              <span className="font-black text-2xl leading-none text-foreground">{allSalons?.length || 0}</span>
               <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Negocios Totales</span>
             </div>
           </div>
@@ -132,7 +134,7 @@ export default function SuperAdminPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-6 h-6" />
           <Input 
             placeholder="Buscar por nombre de marca o ID de negocio..." 
-            className="pl-14 h-16 bg-card border-2 rounded-[1.5rem] text-lg shadow-sm focus:ring-primary focus:border-primary transition-all"
+            className="pl-14 h-16 bg-card border-2 rounded-[1.5rem] text-lg shadow-sm focus:ring-primary focus:border-primary transition-all text-foreground"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -146,17 +148,17 @@ export default function SuperAdminPage() {
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredSalons.map((salon) => (
-              <Card key={salon.id} className="group hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-2xl overflow-hidden rounded-[2rem] border-muted/50">
+              <Card key={salon.id} className="group hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-2xl overflow-hidden rounded-[2rem] border-muted/50 bg-card">
                 <CardHeader className="pb-4 bg-muted/5 transition-colors group-hover:bg-primary/5">
                   <div className="flex justify-between items-start mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                       <Store className="w-6 h-6" />
                     </div>
-                    <Badge variant="outline" className="text-[10px] py-1 px-3 uppercase font-black tracking-widest border-primary/20 bg-background/50">
+                    <Badge variant="outline" className="text-[10px] py-1 px-3 uppercase font-black tracking-widest border-primary/20 bg-background/50 text-foreground">
                       ID: {salon.id}
                     </Badge>
                   </div>
-                  <CardTitle className="text-2xl font-black font-headline leading-tight group-hover:text-primary transition-colors">{salon.name}</CardTitle>
+                  <CardTitle className="text-2xl font-black font-headline leading-tight group-hover:text-primary transition-colors text-foreground">{salon.name}</CardTitle>
                   <CardDescription className="flex items-center gap-2 font-medium">
                     <Calendar className="w-4 h-4 text-primary" />
                     Desde {salon.createdAt?.toDate ? format(salon.createdAt.toDate(), "dd MMM yyyy", { locale: es }) : 'Reciente'}
@@ -168,20 +170,20 @@ export default function SuperAdminPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Color de Marca</span>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full border shadow-inner" style={{ backgroundColor: salon.primaryColor || '#000' }} />
-                        <span className="text-xs font-mono font-bold">{salon.primaryColor || '#000000'}</span>
+                        <span className="text-xs font-mono font-bold text-foreground">{salon.primaryColor || '#000000'}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Capacidad</span>
                       <div className="flex items-center gap-2">
-                         <span className="text-xl font-black">{salon.timeSlots?.length || 0}</span>
+                         <span className="text-xl font-black text-foreground">{salon.timeSlots?.length || 0}</span>
                          <span className="text-[10px] font-bold text-muted-foreground">TURNOS / DÍA</span>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3 pt-2">
-                    <Button variant="outline" size="lg" className="flex-1 rounded-2xl font-bold hover:bg-primary hover:text-primary-foreground group-hover:border-primary/50" asChild>
+                    <Button variant="outline" size="lg" className="flex-1 rounded-2xl font-bold hover:bg-primary hover:text-primary-foreground group-hover:border-primary/50 text-foreground" asChild>
                       <Link href={`/book/${salon.id}`} target="_blank">
                         <ExternalLink className="mr-2 h-5 w-5" /> Explorar
                       </Link>
