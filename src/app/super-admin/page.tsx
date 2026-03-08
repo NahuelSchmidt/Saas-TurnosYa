@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -14,11 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SuperAdminPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   // Check global admin status
   const globalAdminRef = useMemoFirebase(() => {
@@ -41,6 +44,15 @@ export default function SuperAdminPage() {
     salon.id?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const copyUid = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid);
+      setCopied(true);
+      toast({ title: "ID Copiado", description: "Pégalo en la colección globalAdmins de tu consola Firebase." });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (isUserLoading || isAdminChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -51,21 +63,34 @@ export default function SuperAdminPage() {
 
   if (!globalAdminData) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-background">
         <Header />
-        <main className="flex-grow flex items-center justify-center p-4 bg-muted/20">
-          <Card className="max-w-md w-full text-center shadow-xl border-destructive/20">
-            <CardHeader>
-              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-                <ShieldCheck className="w-8 h-8 text-destructive" />
+        <main className="flex-grow flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full text-center shadow-2xl border-primary/20 bg-card/50 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+            <div className="h-2 bg-primary w-full" />
+            <CardHeader className="pt-10">
+              <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                <ShieldCheck className="w-10 h-10 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-black text-destructive">Acceso Denegado</CardTitle>
+              <CardTitle className="text-3xl font-black font-headline tracking-tighter">Acceso de Creador</CardTitle>
               <CardDescription className="text-lg">
-                No tienes permisos de Super Administrador. Contacta al desarrollador principal.
+                Para ingresar a este panel centralizado, tu ID de usuario debe estar autorizado en la base de datos.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" className="w-full h-12 rounded-xl">
+            <CardContent className="space-y-8 pb-10">
+              <div className="bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20">
+                <p className="text-xs uppercase font-black tracking-widest text-muted-foreground mb-4">Tu Identificador Único (UID)</p>
+                <div className="flex items-center gap-3 bg-background border rounded-xl p-3 font-mono text-sm overflow-hidden">
+                  <span className="truncate flex-1 text-primary">{user?.uid || 'No identificado'}</span>
+                  <Button size="icon" variant="ghost" onClick={copyUid} className="shrink-0 h-8 w-8">
+                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+                  Copia este ID y crea un documento con este nombre en la colección <strong>globalAdmins</strong> dentro de tu Consola de Firebase para obtener acceso total.
+                </p>
+              </div>
+              <Button asChild variant="outline" className="w-full h-14 rounded-2xl font-bold text-lg">
                 <Link href="/">Volver al Inicio</Link>
               </Button>
             </CardContent>
