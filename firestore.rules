@@ -1,0 +1,78 @@
+
+/**
+ * TurnosYa - Firestore Security Rules
+ * Configured for multi-tenant salon management and public booking.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isGlobalAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
+    }
+
+    function isSalonAdmin(salonData) {
+      // Usamos el método .get() para evitar errores si los campos no existen
+      return isSignedIn() && (
+        (salonData.get('adminMembers', {}).get(request.auth.uid, false) == true) || 
+        (salonData.get('salonAdminMembers', {}).get(request.auth.uid, false) == true)
+      );
+    }
+
+    // --- Collection Rules ---
+
+    match /userProfiles/{userProfileId} {
+      allow get, list: if isOwner(userProfileId) || isGlobalAdmin();
+      allow create, update: if isOwner(userProfileId);
+      allow delete: if isOwner(userProfileId) || isGlobalAdmin();
+    }
+
+    match /globalAdmins/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isGlobalAdmin();
+      allow write: if false; // Only manageable via Firebase Console for safety
+    }
+
+    match /salons/{salonId} {
+      allow get, list: if true; // Public access to see business details
+      allow create: if isSignedIn(); // Allow registered admins to create their salon
+      allow update, delete: if resource != null && (isSalonAdmin(resource.data) || isGlobalAdmin());
+      
+      // Sub-collections: Services and Professionals
+      match /services/{serviceId} {
+        allow get, list: if true; // Public can see services to book
+        allow write: if isSignedIn(); 
+      }
+      
+      match /professionals/{professionalId} {
+        allow get, list: if true; // Public can see professionals
+        allow write: if isSignedIn();
+      }
+    }
+
+    match /appointments/{appointmentId} {
+      allow get, list: if isSignedIn(); 
+      allow create: if isSignedIn(); 
+      allow update, delete: if isSignedIn(); 
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /reminders/{reminderId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

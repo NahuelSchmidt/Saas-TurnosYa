@@ -1,0 +1,278 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the TurnosYa application, capable of acting as a customer, professional, or administrator. This entity links to an external authentication system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "externalAuthId": {
+          "type": "string",
+          "description": "Identifier from an external authentication system, used to link this profile to an authenticated user. (Security Note: No sensitive authentication data like passwords should be stored here)."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The user's phone number, used for WhatsApp reminders and communication."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's primary role within the application (e.g., 'customer', 'professional', 'admin')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "externalAuthId",
+        "firstName",
+        "lastName",
+        "email",
+        "phoneNumber",
+        "role",
+        "createdAt"
+      ]
+    },
+    "Salon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Salon",
+      "type": "object",
+      "description": "Represents a hair salon or barbershop where services are provided and appointments are scheduled.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Salon entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the salon."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the salon."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The primary contact phone number for the salon."
+        },
+        "email": {
+          "type": "string",
+          "description": "The primary contact email address for the salon.",
+          "format": "email"
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Hex code for the salon's primary branding color."
+        },
+        "timeSlots": {
+          "type": "array",
+          "description": "Available time slots for booking.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "adminMembers": {
+          "type": "object",
+          "description": "Map of user IDs to boolean for administrative access."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the salon record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the salon record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdAt"
+      ]
+    },
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Defines a service offered by a salon, including its duration and price.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Service entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to the Salon offering this service. (Relationship: Salon 1:N Service)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the service (e.g., 'Haircut', 'Beard Trim')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the service."
+        },
+        "duration": {
+          "type": "number",
+          "description": "The estimated duration of the service in minutes."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the service."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates if the service is currently active and available for booking."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the service record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the service record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "duration",
+        "price"
+      ]
+    },
+    "Professional": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Professional",
+      "type": "object",
+      "description": "Represents a professional (e.g., barber, stylist) working at a salon, linking to a UserProfile and detailing their services and availability.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Professional entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the associated UserProfile entity. (Relationship: UserProfile 1:1 Professional)"
+        },
+        "name": {
+            "type": "string"
+        },
+        "specialty": {
+            "type": "string"
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to the Salon where the professional works. (Relationship: Salon 1:N Professional)"
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography or description of the professional."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the professional's profile image.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the professional record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the professional record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "specialty"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/userProfiles/{userProfileId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          }
+        }
+      },
+      {
+        "path": "/salons/{salonId}",
+        "definition": {
+          "entityName": "Salon",
+          "schema": {
+            "$ref": "#/backend/entities/Salon"
+          }
+        }
+      },
+      {
+        "path": "/salons/{salonId}/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          }
+        }
+      },
+      {
+        "path": "/salons/{salonId}/professionals/{professionalId}",
+        "definition": {
+          "entityName": "Professional",
+          "schema": {
+            "$ref": "#/backend/entities/Professional"
+          }
+        }
+      },
+      {
+        "path": "/appointments/{appointmentId}",
+        "definition": {
+          "entityName": "Appointment",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    ]
+  }
+}
