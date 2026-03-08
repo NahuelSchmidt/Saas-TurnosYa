@@ -236,61 +236,29 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/userProfiles/{userProfileId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          }
-        }
-      },
-      {
-        "path": "/salons/{salonId}",
-        "definition": {
-          "entityName": "Salon",
-          "schema": {
-            "$ref": "#/backend/entities/Salon"
-          }
-        }
-      },
-      {
-        "path": "/salons/{salonId}/services/{serviceId}",
-        "definition": {
-          "entityName": "Service",
-          "schema": {
-            "$ref": "#/backend/entities/Service"
-          }
-        }
-      },
-      {
-        "path": "/salons/{salonId}/professionals/{professionalId}",
-        "definition": {
-          "entityName": "Professional",
-          "schema": {
-            "$ref": "#/backend/entities/Professional"
-          }
-        }
-      },
-      {
-        "path": "/appointments/{appointmentId}",
-        "definition": {
-          "entityName": "Appointment",
-          "schema": {
-            "type": "object"
-          }
-        }
-      },
-      {
-        "path": "/globalAdmins/{userId}",
-        "definition": {
-          "entityName": "GlobalAdmin",
-          "schema": {
-            "$ref": "#/backend/entities/GlobalAdmin"
-          }
-        }
-      }
-    ]
+    "/userProfiles/{userProfileId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "User profiles"
+    },
+    "/salons/{salonId}": {
+      "schema": { "$ref": "#/backend/entities/Salon" },
+      "description": "Salon business data"
+    },
+    "/salons/{salonId}/services/{serviceId}": {
+      "schema": { "$ref": "#/backend/entities/Service" },
+      "description": "Services offered by a salon"
+    },
+    "/salons/{salonId}/professionals/{professionalId}": {
+      "schema": { "$ref": "#/backend/entities/Professional" },
+      "description": "Professionals working at a salon"
+    },
+    "/globalAdmins/{userId}": {
+      "schema": { "$ref": "#/backend/entities/GlobalAdmin" },
+      "description": "Global administrator credentials"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "type": "object" },
+      "description": "Booking appointments"
+    }
   }
 }
