@@ -13,7 +13,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
       <Header />
       <main className="flex-grow">
-        {/* Hero Section */}
+        {/* Hero Section - Centrada verticalmente */}
         <section className="relative w-full min-h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden border-b py-12">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(120,120,120,0.05),transparent)] pointer-events-none" />
           <div className="container mx-auto px-4 md:px-6 relative z-10">
@@ -158,9 +158,9 @@ export default function Home() {
             <p className="text-primary-foreground/80 mt-8 mb-16 text-2xl max-w-3xl mx-auto font-medium">
               Únete a los profesionales que ya automatizaron su agenda y están ganando más cada día con menos esfuerzo.
             </p>
-            <Button size="lg" variant="secondary" className="h-20 px-16 text-2xl font-black rounded-[2rem] shadow-2xl transition-all hover:scale-105" asChild>
+            <button className="h-20 px-16 text-2xl font-black rounded-[2rem] shadow-2xl transition-all hover:scale-105 bg-background text-foreground border-none cursor-pointer">
               <Link href="/register">Crear mi Agenda Gratis</Link>
-            </Button>
+            </button>
             <p className="mt-10 opacity-60 text-sm font-bold uppercase tracking-widest">Sin tarjetas de crédito. Sin contratos.</p>
           </div>
         </section>
