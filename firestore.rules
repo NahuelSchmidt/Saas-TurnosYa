@@ -19,7 +19,7 @@ service cloud.firestore {
     }
 
     function isGlobalAdmin() {
-      // Check if a document exists in the globalAdmins collection for the current user
+      // Simplificado para máxima compatibilidad
       return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
@@ -39,11 +39,12 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      // Allow any signed-in user to check their own admin status (needed for the dashboard/super-admin logic)
+      // REGLA CRÍTICA: Permite que el usuario lea SU PROPIO documento de permiso
+      // sin requerir que ya sea admin (evita circularidad)
       allow get: if isSignedIn() && request.auth.uid == userId;
-      // Allow listing only for global admins
+      // El listado general sí requiere ser admin
       allow list: if isGlobalAdmin();
-      // Only writeable via console for safety
+      // Solo editable desde consola por seguridad
       allow write: if false; 
     }
 

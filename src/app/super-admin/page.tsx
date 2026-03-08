@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle, Terminal } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -31,7 +31,7 @@ export default function SuperAdminPage() {
 
   const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
 
-  // Obtenemos todos los negocios del sistema solo si tenemos acceso (globalAdminData != null)
+  // Obtenemos todos los negocios del sistema solo si tenemos acceso
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !globalAdminData) return null;
     return query(collection(db, "salons"), orderBy("createdAt", "desc"));
@@ -98,7 +98,7 @@ export default function SuperAdminPage() {
                     </p>
 
                     <div className="flex items-center gap-2 text-primary">
-                      <Info className="w-4 h-4" />
+                      <Terminal className="w-4 h-4" />
                       <span className="text-[10px] font-bold uppercase tracking-widest">Tu ID Maestro (UID)</span>
                     </div>
                     <div className="flex items-center gap-2 bg-background border rounded-xl p-2 font-mono text-sm">
@@ -111,13 +111,11 @@ export default function SuperAdminPage() {
 
                   <div className="space-y-3">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instrucciones Críticas</p>
-                    <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
-                      <li>Copia tu <strong>ID Maestro</strong> (el código azul arriba).</li>
-                      <li>Entra a <strong>Firebase Console &gt; Firestore</strong>.</li>
-                      <li>Crea la colección: <code className="bg-primary/10 px-1 rounded">globalAdmins</code>.</li>
-                      <li>Crea un documento con tu <strong>ID Maestro</strong> como nombre.</li>
-                      <li><strong>IMPORTANTE:</strong> Añade un campo (Nombre: <code>role</code>, Valor: <code>admin</code>).</li>
-                    </ol>
+                    <div className="space-y-2 text-[11px] leading-tight">
+                        <p>1. Crea la colección: <code className="bg-primary/10 px-1 rounded text-primary font-bold">globalAdmins</code></p>
+                        <p>2. Crea un documento cuyo <strong>ID</strong> sea tu <strong>ID Maestro</strong>.</p>
+                        <p>3. Añade un campo: <code className="bg-primary/10 px-1 rounded text-primary font-bold">role</code> (tipo string) con valor <code className="bg-primary/10 px-1 rounded text-primary font-bold">admin</code>.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -131,7 +129,7 @@ export default function SuperAdminPage() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button onClick={handleRefresh} className="flex-1 h-12 rounded-xl">
-                  <RefreshCw className="mr-2 h-4 w-4" /> Ya lo hice, verificar ahora
+                  <RefreshCw className="mr-2 h-4 w-4" /> Verificar Permisos Ahora
                 </Button>
                 <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
                   <Link href="/">Volver al Inicio</Link>
