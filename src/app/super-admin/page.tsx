@@ -6,10 +6,10 @@ import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -29,7 +29,7 @@ export default function SuperAdminPage() {
     return doc(db, "globalAdmins", user.uid);
   }, [db, user?.uid]);
 
-  const { data: globalAdminData, isLoading: isAdminChecking } = useDoc(globalAdminRef);
+  const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
 
   // Obtenemos todos los negocios del sistema solo si tenemos acceso
   const salonsQuery = useMemoFirebase(() => {
@@ -48,15 +48,22 @@ export default function SuperAdminPage() {
     if (user?.uid) {
       navigator.clipboard.writeText(user.uid);
       setCopied(true);
-      toast({ title: "ID Copiado", description: "Pégalo en la colección globalAdmins." });
+      toast({ title: "ID Copiado", description: "Pégalo en la colección globalAdmins de Firebase." });
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   if (isUserLoading || isAdminChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-sm font-medium animate-pulse">Verificando credenciales de creador...</p>
+        </div>
       </div>
     );
   }
@@ -67,7 +74,7 @@ export default function SuperAdminPage() {
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
-          <Card className="max-w-lg w-full text-center shadow-2xl border-primary/20 bg-card overflow-hidden">
+          <Card className="max-w-2xl w-full text-center shadow-2xl border-primary/20 bg-card overflow-hidden">
             <div className="h-2 bg-primary w-full" />
             <CardHeader className="pt-10">
               <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
@@ -75,43 +82,60 @@ export default function SuperAdminPage() {
               </div>
               <CardTitle className="text-3xl font-black font-headline tracking-tighter">Acceso de Creador</CardTitle>
               <CardDescription className="text-lg">
-                Tu usuario actual no tiene permisos de administrador global.
+                Tu cuenta aún no está autorizada para ver el Panel Global.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pb-10">
               <div className="bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20 text-left">
-                <div className="flex items-center gap-2 mb-4 text-primary">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Sesión Iniciada como:</span>
-                </div>
-                <p className="font-mono text-sm mb-6 bg-background p-2 rounded border truncate">{user?.email || 'Anónimo / Desconocido'}</p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Mail className="w-4 h-4" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Usuario Actual</span>
+                    </div>
+                    <p className="font-mono text-xs bg-background p-3 rounded-xl border truncate" title={user?.email || 'Anónimo'}>
+                      {user?.email || 'Anónimo / Temporal'}
+                    </p>
 
-                <div className="flex items-center gap-2 mb-2 text-primary">
-                  <Info className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">ID de Usuario (UID):</span>
-                </div>
-                <div className="flex items-center gap-3 bg-background border rounded-xl p-3 font-mono text-sm mb-8">
-                  <span className="truncate flex-1 text-primary font-bold">{user?.uid}</span>
-                  <button onClick={copyUid} className="shrink-0 p-2 hover:bg-muted rounded-lg transition-colors">
-                    {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
-                  </button>
+                    <div className="flex items-center gap-2 text-primary">
+                      <Info className="w-4 h-4" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Tu ID Maestro (UID)</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-background border rounded-xl p-2 font-mono text-sm">
+                      <span className="truncate flex-1 text-primary font-bold pl-2">{user?.uid}</span>
+                      <Button onClick={copyUid} size="icon" variant="ghost" className="shrink-0 rounded-lg">
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instrucciones Críticas</p>
+                    <ol className="text-xs space-y-2 list-decimal list-inside">
+                      <li>Ve a <strong>Firebase Console &gt; Firestore</strong>.</li>
+                      <li>Crea la colección: <code className="bg-primary/10 px-1 rounded">globalAdmins</code> (exactamente así).</li>
+                      <li>Crea un documento con el <strong>ID Maestro</strong> que copiaste.</li>
+                      <li><strong>IMPORTANTE:</strong> El documento DEBE tener al menos un campo (ej: <code className="bg-primary/10 px-1 rounded">role: "admin"</code>).</li>
+                    </ol>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  <p className="text-sm font-bold">Cómo activar tu acceso:</p>
-                  <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-2">
-                    <li>Copia tu <strong>UID</strong> (el código azul arriba).</li>
-                    <li>Entra a <strong>Firebase Console &gt; Firestore</strong>.</li>
-                    <li>Si no existe, crea una colección: <code>globalAdmins</code>.</li>
-                    <li>Crea un documento con tu <strong>UID</strong> como ID del documento.</li>
-                    <li><strong>IMPORTANTE:</strong> Añade un campo (ej: <code>active: true</code>).</li>
-                    <li>Vuelve aquí y refresca la página.</li>
-                  </ol>
-                </div>
+                {adminError && (
+                  <div className="mt-6 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <p className="text-[10px] font-bold">Error de sistema: {adminError.message}</p>
+                  </div>
+                )}
               </div>
-              <Button asChild variant="outline" className="w-full h-12 rounded-xl">
-                <Link href="/">Volver al Inicio</Link>
-              </Button>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={handleRefresh} className="flex-1 h-12 rounded-xl">
+                  <RefreshCw className="mr-2 h-4 w-4" /> Ya lo hice, verificar ahora
+                </Button>
+                <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
+                  <Link href="/">Volver al Inicio</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </main>
@@ -128,13 +152,13 @@ export default function SuperAdminPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
             <h1 className="text-5xl font-black font-headline tracking-tighter mb-2">Panel Global</h1>
-            <p className="text-muted-foreground text-lg">Administración centralizada de todos los negocios.</p>
+            <p className="text-muted-foreground text-lg">Control total de todos los negocios en TurnosYa.</p>
           </div>
           <div className="flex items-center gap-4 bg-primary/10 px-6 py-3 rounded-full border border-primary/20">
             <Store className="w-6 h-6 text-primary" />
             <div className="flex flex-col">
               <span className="font-black text-2xl leading-none">{allSalons?.length || 0}</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Negocios</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Registros</span>
             </div>
           </div>
         </div>
@@ -142,8 +166,8 @@ export default function SuperAdminPage() {
         <div className="relative mb-12">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-6 h-6" />
           <Input 
-            placeholder="Buscar por nombre o ID de negocio..." 
-            className="pl-14 h-16 bg-card border-2 rounded-2xl text-lg"
+            placeholder="Busca por nombre o ID del salón..." 
+            className="pl-14 h-16 bg-card border-2 rounded-2xl text-lg shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -152,7 +176,7 @@ export default function SuperAdminPage() {
         {isSalonsLoading ? (
           <div className="flex flex-col items-center justify-center p-32 space-y-4">
             <Loader2 className="w-16 h-16 animate-spin text-primary opacity-20" />
-            <p className="text-muted-foreground font-medium">Cargando datos globales...</p>
+            <p className="text-muted-foreground font-medium">Accediendo a la base de datos global...</p>
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -179,7 +203,7 @@ export default function SuperAdminPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Color Marca</span>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full border shadow-inner" style={{ backgroundColor: salon.primaryColor || '#000' }} />
-                        <span className="text-xs font-mono font-bold">{salon.primaryColor || '#000000'}</span>
+                        <span className="text-xs font-mono font-bold uppercase">{salon.primaryColor || '#000000'}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
@@ -191,18 +215,25 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                   
-                  <Button variant="outline" size="lg" className="w-full rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
-                    <Link href={`/book/${salon.id}`} target="_blank">
-                      <ExternalLink className="mr-2 h-5 w-5" /> Abrir Página
-                    </Link>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="lg" className="flex-1 rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
+                      <Link href={`/book/${salon.id}`} target="_blank">
+                        <ExternalLink className="mr-2 h-5 w-5" /> Abrir
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="lg" className="rounded-xl font-bold" asChild>
+                      <Link href={`/dashboard`}>
+                         <Users className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
             {filteredSalons.length === 0 && (
               <div className="md:col-span-3 text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-muted">
                 <h3 className="text-2xl font-black text-muted-foreground">Sin resultados</h3>
-                <p className="text-muted-foreground">No hay negocios que coincidan con tu búsqueda.</p>
+                <p className="text-muted-foreground">No hay negocios que coincidan con "{searchTerm}".</p>
               </div>
             )}
           </div>

@@ -38,8 +38,12 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      allow read: if isSignedIn(); // Permite verificar permisos
-      allow write: if false; // Solo vía consola
+      // Allow any user to check their own status
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      // Allow listing only for global admins
+      allow list: if isGlobalAdmin();
+      // Only writeable via console for safety
+      allow write: if false; 
     }
 
     match /salons/{salonId} {
