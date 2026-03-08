@@ -31,7 +31,7 @@ export default function SuperAdminPage() {
 
   const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
 
-  // Obtenemos todos los negocios del sistema solo si tenemos acceso
+  // Obtenemos todos los negocios del sistema solo si tenemos acceso (globalAdminData != null)
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !globalAdminData) return null;
     return query(collection(db, "salons"), orderBy("createdAt", "desc"));
@@ -68,7 +68,7 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Si no se encuentra el documento de permisos en Firestore
+  // Si no se encuentra el documento de permisos en Firestore (acceso denegado)
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -103,19 +103,20 @@ export default function SuperAdminPage() {
                     </div>
                     <div className="flex items-center gap-2 bg-background border rounded-xl p-2 font-mono text-sm">
                       <span className="truncate flex-1 text-primary font-bold pl-2">{user?.uid}</span>
-                      <Button onClick={copyUid} size="icon" variant="ghost" className="shrink-0 rounded-lg">
+                      <button onClick={copyUid} className="p-2 hover:bg-primary/10 rounded-lg transition-colors">
                         {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instrucciones Críticas</p>
-                    <ol className="text-xs space-y-2 list-decimal list-inside">
-                      <li>Ve a <strong>Firebase Console &gt; Firestore</strong>.</li>
-                      <li>Crea la colección: <code className="bg-primary/10 px-1 rounded">globalAdmins</code> (exactamente así).</li>
-                      <li>Crea un documento con el <strong>ID Maestro</strong> que copiaste.</li>
-                      <li><strong>IMPORTANTE:</strong> El documento DEBE tener al menos un campo (ej: <code className="bg-primary/10 px-1 rounded">role: "admin"</code>).</li>
+                    <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
+                      <li>Copia tu <strong>ID Maestro</strong> (el código azul arriba).</li>
+                      <li>Entra a <strong>Firebase Console &gt; Firestore</strong>.</li>
+                      <li>Crea la colección: <code className="bg-primary/10 px-1 rounded">globalAdmins</code>.</li>
+                      <li>Crea un documento con tu <strong>ID Maestro</strong> como nombre.</li>
+                      <li><strong>IMPORTANTE:</strong> Añade un campo (Nombre: <code>role</code>, Valor: <code>admin</code>).</li>
                     </ol>
                   </div>
                 </div>
@@ -144,7 +145,7 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Vista del Panel si el usuario ES administrador
+  // Vista del Panel si el usuario ES administrador global
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />

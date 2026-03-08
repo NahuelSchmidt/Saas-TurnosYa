@@ -19,6 +19,7 @@ service cloud.firestore {
     }
 
     function isGlobalAdmin() {
+      // Check if a document exists in the globalAdmins collection for the current user
       return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
@@ -38,7 +39,7 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      // Allow any user to check their own status
+      // Allow any signed-in user to check their own admin status (needed for the dashboard/super-admin logic)
       allow get: if isSignedIn() && request.auth.uid == userId;
       // Allow listing only for global admins
       allow list: if isGlobalAdmin();
