@@ -89,11 +89,12 @@ export default function SuperAdminPage() {
                 <div className="text-left mt-6 space-y-4">
                   <p className="text-sm font-bold">Pasos para activar tu acceso:</p>
                   <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-2">
-                    <li>Copia el ID azul de arriba.</li>
+                    <li>Copia el ID azul de arriba haciendo clic en el botón.</li>
                     <li>Ve a tu <strong>Consola de Firebase</strong>.</li>
                     <li>Entra en <strong>Firestore Database</strong>.</li>
                     <li>Crea una colección llamada <code>globalAdmins</code>.</li>
-                    <li>Crea un documento usando tu ID como nombre.</li>
+                    <li>Crea un documento usando tu ID como <strong>ID del documento</strong>.</li>
+                    <li>Agrega un campo (ej: <code>name: "Admin"</code>) y guarda.</li>
                     <li>Refresca esta página.</li>
                   </ol>
                 </div>
