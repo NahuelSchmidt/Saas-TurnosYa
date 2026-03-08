@@ -92,16 +92,16 @@ export default function SuperAdminPage() {
                 </div>
                 <div className="flex items-center gap-3 bg-background border rounded-xl p-3 font-mono text-sm mb-8">
                   <span className="truncate flex-1 text-primary font-bold">{user?.uid}</span>
-                  <Button size="icon" variant="ghost" onClick={copyUid} className="shrink-0">
+                  <button onClick={copyUid} className="shrink-0 p-2 hover:bg-muted rounded-lg transition-colors">
                     {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
-                  </Button>
+                  </button>
                 </div>
 
                 <div className="space-y-4">
                   <p className="text-sm font-bold">Cómo activar tu acceso:</p>
                   <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-2">
                     <li>Copia tu <strong>UID</strong> (el código azul arriba).</li>
-                    <li>Entra a <strong>Firebase Console > Firestore</strong>.</li>
+                    <li>Entra a <strong>Firebase Console &gt; Firestore</strong>.</li>
                     <li>Si no existe, crea una colección: <code>globalAdmins</code>.</li>
                     <li>Crea un documento con tu <strong>UID</strong> como ID del documento.</li>
                     <li><strong>IMPORTANTE:</strong> Añade un campo (ej: <code>active: true</code>).</li>
