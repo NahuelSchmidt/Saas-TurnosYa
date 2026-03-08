@@ -10,7 +10,6 @@ import {
   UserCircle,
   Sun,
   Moon,
-  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,15 +29,6 @@ export function Header() {
   const [isDark, setIsDark] = useState(false);
   const { user } = useUser();
   const db = useFirestore();
-
-  // Verificamos si el usuario actual es un administrador global
-  const globalAdminRef = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null;
-    return doc(db, "globalAdmins", user.uid);
-  }, [db, user?.uid]);
-
-  const { data: globalAdminData } = useDoc(globalAdminRef);
-  const isGlobalAdmin = !!globalAdminData;
 
   useEffect(() => {
     const theme = localStorage.getItem("theme");
@@ -61,15 +51,11 @@ export function Header() {
     }
   };
 
+  // Definimos solo los items públicos y de usuario estándar
   const navItems = [
     { href: "/", label: "Inicio", icon: Home },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ];
-
-  // Si es admin global, agregamos el acceso al panel central
-  if (isGlobalAdmin) {
-    navItems.push({ href: "/super-admin", label: "Panel Global", icon: ShieldAlert });
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
