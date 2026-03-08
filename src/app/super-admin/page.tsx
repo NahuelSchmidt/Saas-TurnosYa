@@ -9,7 +9,7 @@ import { collection, doc, query, orderBy } from "firebase/firestore";
 import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, RefreshCw, Trash2, ShieldAlert, LogOut, Info } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -76,7 +76,7 @@ export default function SuperAdminPage() {
     deleteDocumentNonBlocking(salonDocRef);
     toast({
       title: "Negocio Eliminado",
-      description: `${salonName} ha sido removido.`,
+      description: `${salonName} ha sido removido de la plataforma.`,
     });
   };
 
@@ -85,13 +85,13 @@ export default function SuperAdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-sm font-medium animate-pulse">Sincronizando con la base de datos...</p>
+          <p className="text-sm font-medium animate-pulse uppercase tracking-widest">Verificando Credenciales Maestras...</p>
         </div>
       </div>
     );
   }
 
-  // Pantalla de configuración si no se detecta el permiso
+  // Si NO es admin, mostramos la guía de configuración (Solo se ve la primera vez)
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -103,9 +103,9 @@ export default function SuperAdminPage() {
               <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                 <ShieldAlert className="w-10 h-10 text-primary" />
               </div>
-              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">Acceso Maestro Requerido</CardTitle>
+              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">Acceso Maestro Pendiente</CardTitle>
               <CardDescription className="text-lg">
-                Sigue estos pasos exactos para activar tu panel global.
+                Este paso se realiza una única vez para activar tu panel global.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pb-10 px-8">
@@ -114,12 +114,12 @@ export default function SuperAdminPage() {
                     <Mail className="w-5 h-5 text-primary" />
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sesión Activa</p>
-                        <p className="font-mono text-xs font-bold">{user?.email || (user?.isAnonymous ? 'Invitado (Anónimo)' : 'Sin Email')}</p>
+                        <p className="font-mono text-xs font-bold">{user?.email || 'Usuario Autenticado'}</p>
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">1. Copia tu ID Maestro (UID)</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">1. Copia tu ID Maestro</p>
                     <div className="flex items-center gap-2 bg-background border-2 border-primary/20 rounded-xl p-3 font-mono text-sm">
                         <span className="truncate flex-1 text-primary font-black">{user?.uid}</span>
                         <Button onClick={copyUid} size="sm" variant="secondary" className="h-8">
@@ -130,32 +130,25 @@ export default function SuperAdminPage() {
 
                 <div className="space-y-3 bg-primary/5 p-4 rounded-xl border border-primary/10">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
-                        <Info className="w-3 h-3" /> 2. En tu Consola de Firebase
+                        <Info className="w-3 h-3" /> 2. En Firebase Console
                     </p>
                     <ol className="text-[11px] leading-relaxed list-decimal list-inside space-y-2 font-medium">
-                        <li>Ve a <strong>Firestore Database</strong>.</li>
-                        <li>Crea una colección llamada: <code className="bg-primary/20 px-1 rounded">globalAdmins</code></li>
-                        <li>Crea un documento con <strong>ID</strong> = (Pega tu UID arriba).</li>
-                        <li>Añade un campo: <strong>Nombre:</strong> <code className="bg-primary/20 px-1 rounded">role</code> | <strong>Valor:</strong> <code className="bg-primary/20 px-1 rounded">admin</code></li>
-                        <li>Haz clic en <strong>Guardar</strong> y refresca esta página.</li>
+                        <li>Crea la colección: <code className="bg-primary/20 px-1 rounded font-bold">globalAdmins</code></li>
+                        <li>Crea un documento con ID: <code className="bg-primary/20 px-1 rounded font-bold">pestaña ID arriba</code></li>
+                        <li>Añade el campo: <code className="bg-primary/20 px-1 rounded">role</code> | Valor: <code className="bg-primary/20 px-1 rounded">admin</code></li>
+                        <li>Guarda y haz clic en el botón de abajo.</li>
                     </ol>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button onClick={() => window.location.reload()} className="flex-1 h-14 rounded-2xl font-black text-lg shadow-xl uppercase italic">
-                  <RefreshCw className="mr-2 h-5 w-5" /> Verificar Ahora
+                  <RefreshCw className="mr-2 h-5 w-5" /> Verificar Acceso
                 </Button>
                 <Button onClick={handleLogout} variant="outline" className="flex-1 h-14 rounded-2xl font-bold">
                   <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                 </Button>
               </div>
-              
-              {adminError && (
-                  <p className="text-xs text-destructive font-bold bg-destructive/10 p-2 rounded">
-                    Error de conexión: {adminError.message}
-                  </p>
-              )}
             </CardContent>
           </Card>
         </main>
@@ -164,20 +157,26 @@ export default function SuperAdminPage() {
     );
   }
 
+  // Si YA es admin, mostramos el Panel de Control Directamente
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2 uppercase italic">Panel Maestro</h1>
-            <p className="text-muted-foreground text-lg">Control total de {allSalons?.length || 0} negocios registrados.</p>
+            <div className="flex items-center gap-2 mb-2">
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/20 px-3 py-1 font-black text-[10px] uppercase tracking-[0.2em]">
+                    <ShieldCheck className="w-3 h-3 mr-1" /> Acceso Maestro Activo
+                </Badge>
+            </div>
+            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2 uppercase italic">Panel de Control Global</h1>
+            <p className="text-muted-foreground text-lg">Administración centralizada de todos los negocios.</p>
           </div>
           <div className="flex items-center gap-4 bg-primary text-primary-foreground px-8 py-4 rounded-2xl shadow-2xl">
             <Store className="w-8 h-8" />
             <div className="flex flex-col">
               <span className="font-black text-3xl leading-none">{allSalons?.length || 0}</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Salones Activos</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Negocios Registrados</span>
             </div>
           </div>
         </div>
@@ -185,7 +184,7 @@ export default function SuperAdminPage() {
         <div className="relative mb-12">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-6 h-6" />
           <Input 
-            placeholder="Buscar por nombre o ID del salón..." 
+            placeholder="Buscar por nombre de negocio o ID..." 
             className="pl-14 h-16 bg-card border-2 rounded-2xl text-lg shadow-sm focus:ring-primary/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -195,7 +194,7 @@ export default function SuperAdminPage() {
         {isSalonsLoading ? (
           <div className="flex flex-col items-center justify-center p-32 space-y-4">
             <Loader2 className="w-16 h-16 animate-spin text-primary opacity-20" />
-            <p className="text-muted-foreground font-medium uppercase tracking-widest">Consultando registros globales...</p>
+            <p className="text-muted-foreground font-medium uppercase tracking-widest">Consultando base de datos...</p>
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -219,17 +218,17 @@ export default function SuperAdminPage() {
                 <CardContent className="space-y-6 pt-6">
                   <div className="grid grid-cols-2 gap-4 py-6 border-y border-border/50">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Branding</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1 text-glow">Branding</span>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full border shadow-inner" style={{ backgroundColor: salon.primaryColor || '#000' }} />
                         <span className="text-xs font-mono font-bold uppercase">{salon.primaryColor || '#000000'}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Capacidad</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Agenda</span>
                       <div className="flex items-center gap-2">
                          <span className="text-xl font-black">{salon.timeSlots?.length || 0}</span>
-                         <span className="text-[10px] font-bold text-muted-foreground">SLOTS</span>
+                         <span className="text-[10px] font-bold text-muted-foreground">TURNOS</span>
                       </div>
                     </div>
                   </div>
@@ -249,18 +248,18 @@ export default function SuperAdminPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent className="rounded-3xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-2xl font-black">¿Eliminar este negocio?</AlertDialogTitle>
+                          <AlertDialogTitle className="text-2xl font-black uppercase italic">¿Eliminar Negocio?</AlertDialogTitle>
                           <AlertDialogDescription className="text-lg">
-                            Esta acción borrará permanentemente el salón <strong>{salon.name}</strong> y todos sus servicios. No se puede deshacer.
+                            Esta acción borrará permanentemente a <strong>{salon.name}</strong> y todos sus servicios. No se puede deshacer.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-2">
                           <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleDeleteSalon(salon.id, salon.name)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold"
                           >
-                            Eliminar Permanentemente
+                            Eliminar para Siempre
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -269,12 +268,6 @@ export default function SuperAdminPage() {
                 </CardContent>
               </Card>
             ))}
-            {filteredSalons.length === 0 && !isSalonsLoading && (
-              <div className="md:col-span-3 text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-muted">
-                <h3 className="text-2xl font-black text-muted-foreground uppercase italic">Base de datos vacía</h3>
-                <p className="text-muted-foreground">No se encontraron negocios registrados que coincidan con la búsqueda.</p>
-              </div>
-            )}
           </div>
         )}
       </main>
