@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, RefreshCw, Trash2, ShieldAlert, LogOut, Info } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, RefreshCw, Trash2, ShieldAlert, LogOut, Info, ExternalLink as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -42,7 +42,7 @@ export default function SuperAdminPage() {
     return doc(db, "globalAdmins", user.uid);
   }, [db, user?.uid]);
 
-  const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
+  const { data: globalAdminData, isLoading: isAdminChecking } = useDoc(globalAdminRef);
 
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !globalAdminData) return null;
@@ -80,6 +80,8 @@ export default function SuperAdminPage() {
     });
   };
 
+  const firebaseConsoleUrl = "https://console.firebase.google.com/project/studio-6398913436-7a565/firestore/data";
+
   if (isUserLoading || isAdminChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -91,7 +93,6 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Si NO es admin, mostramos la guía de configuración (Solo se ve la primera vez)
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -103,9 +104,9 @@ export default function SuperAdminPage() {
               <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                 <ShieldAlert className="w-10 h-10 text-primary" />
               </div>
-              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">Acceso Maestro Pendiente</CardTitle>
+              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">Configuración de Acceso Maestro</CardTitle>
               <CardDescription className="text-lg">
-                Este paso se realiza una única vez para activar tu panel global.
+                Este paso se realiza una única vez para activar tu panel global de por vida.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pb-10 px-8">
@@ -113,7 +114,7 @@ export default function SuperAdminPage() {
                 <div className="flex items-center gap-4 p-4 bg-background rounded-xl border">
                     <Mail className="w-5 h-5 text-primary" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sesión Activa</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tu Cuenta Actual</p>
                         <p className="font-mono text-xs font-bold">{user?.email || 'Usuario Autenticado'}</p>
                     </div>
                 </div>
@@ -130,13 +131,14 @@ export default function SuperAdminPage() {
 
                 <div className="space-y-3 bg-primary/5 p-4 rounded-xl border border-primary/10">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
-                        <Info className="w-3 h-3" /> 2. En Firebase Console
+                        <Info className="w-3 h-3" /> 2. Pasos en Firebase Console
                     </p>
                     <ol className="text-[11px] leading-relaxed list-decimal list-inside space-y-2 font-medium">
+                        <li>Entra aquí: <a href={firebaseConsoleUrl} target="_blank" className="text-primary font-bold underline inline-flex items-center gap-1">Ir a Firebase Console <LinkIcon className="w-3 h-3" /></a></li>
                         <li>Crea la colección: <code className="bg-primary/20 px-1 rounded font-bold">globalAdmins</code></li>
-                        <li>Crea un documento con ID: <code className="bg-primary/20 px-1 rounded font-bold">pestaña ID arriba</code></li>
+                        <li>Crea un documento con ID: <code className="bg-primary/20 px-1 rounded font-bold">pega tu ID copiado</code></li>
                         <li>Añade el campo: <code className="bg-primary/20 px-1 rounded">role</code> | Valor: <code className="bg-primary/20 px-1 rounded">admin</code></li>
-                        <li>Guarda y haz clic en el botón de abajo.</li>
+                        <li>Guarda y haz clic en "Verificar Acceso" abajo.</li>
                     </ol>
                 </div>
               </div>
@@ -157,7 +159,6 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Si YA es admin, mostramos el Panel de Control Directamente
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
@@ -218,7 +219,7 @@ export default function SuperAdminPage() {
                 <CardContent className="space-y-6 pt-6">
                   <div className="grid grid-cols-2 gap-4 py-6 border-y border-border/50">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1 text-glow">Branding</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Branding</span>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full border shadow-inner" style={{ backgroundColor: salon.primaryColor || '#000' }} />
                         <span className="text-xs font-mono font-bold uppercase">{salon.primaryColor || '#000000'}</span>
