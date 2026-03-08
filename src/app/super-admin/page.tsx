@@ -1,12 +1,11 @@
-
 "use client";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle, Terminal } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle, Terminal, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -15,6 +14,17 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function SuperAdminPage() {
   const { user, isUserLoading } = useUser();
@@ -29,7 +39,7 @@ export default function SuperAdminPage() {
     return doc(db, "globalAdmins", user.uid);
   }, [db, user?.uid]);
 
-  const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
+  const { data: globalAdminData, isLoading: isAdminChecking } = useDoc(globalAdminRef);
 
   // Obtenemos todos los negocios del sistema solo si tenemos acceso confirmado
   const salonsQuery = useMemoFirebase(() => {
@@ -53,6 +63,16 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleDeleteSalon = (salonId: string, salonName: string) => {
+    if (!db) return;
+    const salonDocRef = doc(db, "salons", salonId);
+    deleteDocumentNonBlocking(salonDocRef);
+    toast({
+      title: "Negocio Eliminado",
+      description: `${salonName} ha sido removido del sistema.`,
+    });
+  };
+
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -68,7 +88,7 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Si no se encuentra el documento de permisos en Firestore (Cualquier otro usuario verá esto)
+  // Si no se encuentra el documento de permisos en Firestore
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -91,7 +111,7 @@ export default function SuperAdminPage() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-primary">
                       <Mail className="w-4 h-4" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Tu Usuario</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Tu Usuario Logueado</span>
                     </div>
                     <p className="font-mono text-xs bg-background p-3 rounded-xl border truncate" title={user?.email || 'Anónimo'}>
                       {user?.email || 'Anónimo / Temporal'}
@@ -110,13 +130,14 @@ export default function SuperAdminPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pasos para Activar</p>
-                    <div className="space-y-2 text-[11px] leading-tight">
-                        <p>1. Copia tu <strong>ID Maestro</strong> arriba.</p>
-                        <p>2. Ve a <strong>Firebase Console &gt; Firestore</strong>.</p>
-                        <p>3. En la colección <strong>globalAdmins</strong>, crea un documento con ese ID.</p>
-                        <p>4. Añade un campo: <strong>role</strong> (string) = <strong>admin</strong>.</p>
-                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pasos en Firebase Console</p>
+                    <ol className="text-[11px] leading-tight list-decimal list-inside space-y-2">
+                        <li>Copia tu <strong>UID</strong> (el código azul arriba).</li>
+                        <li>Entra a <strong>Firebase Console &gt; Firestore</strong>.</li>
+                        <li>Si no existe, crea una colección: <code>globalAdmins</code>.</li>
+                        <li>Crea un documento con tu <strong>UID</strong> como ID del documento.</li>
+                        <li><strong>IMPORTANTE:</strong> Añade un campo (ej: <code>role: "admin"</code>).</li>
+                    </ol>
                   </div>
                 </div>
               </div>
@@ -137,7 +158,6 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Vista del Panel solo para TI (el administrador global)
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
@@ -145,7 +165,7 @@ export default function SuperAdminPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
             <h1 className="text-5xl font-black font-headline tracking-tighter mb-2">Panel Maestro</h1>
-            <p className="text-muted-foreground text-lg">Estás viendo todos los negocios registrados en TurnosYa.</p>
+            <p className="text-muted-foreground text-lg">Control total de los negocios registrados.</p>
           </div>
           <div className="flex items-center gap-4 bg-primary/10 px-6 py-3 rounded-full border border-primary/20">
             <Store className="w-6 h-6 text-primary" />
@@ -209,11 +229,36 @@ export default function SuperAdminPage() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="lg" className="flex-1 rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
+                    <Button variant="outline" size="sm" className="flex-1 rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
                       <Link href={`/book/${salon.id}`} target="_blank">
-                        <ExternalLink className="mr-2 h-5 w-5" /> Abrir Página
+                        <ExternalLink className="mr-2 h-4 w-4" /> Ver
                       </Link>
                     </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="rounded-xl text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Eliminar este negocio?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción borrará permanentemente el salón <strong>{salon.name}</strong> y sus configuraciones. Esta acción no se puede deshacer.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteSalon(salon.id, salon.name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Eliminar Definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
