@@ -19,7 +19,7 @@ service cloud.firestore {
     }
 
     function isGlobalAdmin() {
-      // Simplificado para máxima compatibilidad
+      // Un usuario es admin global si su UID existe en la colección globalAdmins
       return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
@@ -39,17 +39,20 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      // REGLA CRÍTICA: Permite que el usuario lea SU PROPIO documento de permiso
-      // sin requerir que ya sea admin (evita circularidad)
+      // Permite que el usuario lea SU PROPIO permiso para que la App lo identifique
       allow get: if isSignedIn() && request.auth.uid == userId;
-      // El listado general sí requiere ser admin
+      // Solo admins pueden ver la lista de otros admins
       allow list: if isGlobalAdmin();
-      // Solo editable desde consola por seguridad
+      // Solo editable desde consola por seguridad máxima
       allow write: if false; 
     }
 
     match /salons/{salonId} {
-      allow get, list: if true; 
+      // El listado general para el Super Admin requiere ser Super Admin
+      // pero para el público permitimos 'get' si conocen el ID para reservar
+      allow get: if true; 
+      allow list: if isGlobalAdmin(); // Solo tú puedes ver la lista completa
+      
       allow create: if isSignedIn(); 
       allow update, delete: if resource != null && (isSalonAdmin(resource.data) || isGlobalAdmin());
       

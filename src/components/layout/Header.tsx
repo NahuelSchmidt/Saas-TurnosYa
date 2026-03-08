@@ -21,14 +21,12 @@ import {
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser } from "@/firebase";
 
 export function Header() {
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(false);
   const { user } = useUser();
-  const db = useFirestore();
 
   useEffect(() => {
     const theme = localStorage.getItem("theme");
@@ -51,7 +49,7 @@ export function Header() {
     }
   };
 
-  // Definimos solo los items públicos y de usuario estándar
+  // Ítems de navegación públicos y de usuario estándar
   const navItems = [
     { href: "/", label: "Inicio", icon: Home },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

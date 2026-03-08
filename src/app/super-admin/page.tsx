@@ -9,7 +9,7 @@ import { collection, doc, query, orderBy } from "firebase/firestore";
 import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, Info, RefreshCw, AlertTriangle, Terminal } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,7 +31,7 @@ export default function SuperAdminPage() {
 
   const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
 
-  // Obtenemos todos los negocios del sistema solo si tenemos acceso
+  // Obtenemos todos los negocios del sistema solo si tenemos acceso confirmado
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !globalAdminData) return null;
     return query(collection(db, "salons"), orderBy("createdAt", "desc"));
@@ -62,13 +62,13 @@ export default function SuperAdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-sm font-medium animate-pulse">Verificando credenciales de creador...</p>
+          <p className="text-sm font-medium animate-pulse">Verificando credenciales maestras...</p>
         </div>
       </div>
     );
   }
 
-  // Si no se encuentra el documento de permisos en Firestore (acceso denegado)
+  // Si no se encuentra el documento de permisos en Firestore (Cualquier otro usuario verá esto)
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -82,7 +82,7 @@ export default function SuperAdminPage() {
               </div>
               <CardTitle className="text-3xl font-black font-headline tracking-tighter">Acceso de Creador</CardTitle>
               <CardDescription className="text-lg">
-                Tu cuenta aún no está autorizada para ver el Panel Global.
+                Esta es una ruta privada. Si eres el dueño, sigue estos pasos para activar tu acceso.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pb-10">
@@ -91,7 +91,7 @@ export default function SuperAdminPage() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-primary">
                       <Mail className="w-4 h-4" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Usuario Actual</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Tu Usuario</span>
                     </div>
                     <p className="font-mono text-xs bg-background p-3 rounded-xl border truncate" title={user?.email || 'Anónimo'}>
                       {user?.email || 'Anónimo / Temporal'}
@@ -110,21 +110,15 @@ export default function SuperAdminPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instrucciones Críticas</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pasos para Activar</p>
                     <div className="space-y-2 text-[11px] leading-tight">
-                        <p>1. Crea la colección: <code className="bg-primary/10 px-1 rounded text-primary font-bold">globalAdmins</code></p>
-                        <p>2. Crea un documento cuyo <strong>ID</strong> sea tu <strong>ID Maestro</strong>.</p>
-                        <p>3. Añade un campo: <code className="bg-primary/10 px-1 rounded text-primary font-bold">role</code> (tipo string) con valor <code className="bg-primary/10 px-1 rounded text-primary font-bold">admin</code>.</p>
+                        <p>1. Copia tu <strong>ID Maestro</strong> arriba.</p>
+                        <p>2. Ve a <strong>Firebase Console &gt; Firestore</strong>.</p>
+                        <p>3. En la colección <strong>globalAdmins</strong>, crea un documento con ese ID.</p>
+                        <p>4. Añade un campo: <strong>role</strong> (string) = <strong>admin</strong>.</p>
                     </div>
                   </div>
                 </div>
-
-                {adminError && (
-                  <div className="mt-6 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
-                    <p className="text-[10px] font-bold">Error de sistema: {adminError.message}</p>
-                  </div>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -143,21 +137,21 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Vista del Panel si el usuario ES administrador global
+  // Vista del Panel solo para TI (el administrador global)
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2">Panel Global</h1>
-            <p className="text-muted-foreground text-lg">Control total de todos los negocios en TurnosYa.</p>
+            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2">Panel Maestro</h1>
+            <p className="text-muted-foreground text-lg">Estás viendo todos los negocios registrados en TurnosYa.</p>
           </div>
           <div className="flex items-center gap-4 bg-primary/10 px-6 py-3 rounded-full border border-primary/20">
             <Store className="w-6 h-6 text-primary" />
             <div className="flex flex-col">
               <span className="font-black text-2xl leading-none">{allSalons?.length || 0}</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Registros</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Negocios</span>
             </div>
           </div>
         </div>
@@ -217,12 +211,7 @@ export default function SuperAdminPage() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="lg" className="flex-1 rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
                       <Link href={`/book/${salon.id}`} target="_blank">
-                        <ExternalLink className="mr-2 h-5 w-5" /> Abrir
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="lg" className="rounded-xl font-bold" asChild>
-                      <Link href={`/dashboard`}>
-                         <Users className="h-5 w-5" />
+                        <ExternalLink className="mr-2 h-5 w-5" /> Abrir Página
                       </Link>
                     </Button>
                   </div>
