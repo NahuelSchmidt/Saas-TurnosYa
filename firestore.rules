@@ -39,7 +39,7 @@ service cloud.firestore {
     }
 
     match /globalAdmins/{userId} {
-      // Permite que cualquier usuario autenticado verifique su propio permiso
+      // Permite que cualquier usuario autenticado verifique su propio permiso de admin
       allow get: if isSignedIn() && request.auth.uid == userId;
       // Solo un admin global puede listar a otros admins
       allow list: if isGlobalAdmin();

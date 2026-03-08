@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, RefreshCw, Trash2, ShieldAlert } from "lucide-react";
+import { Loader2, Store, Users, ExternalLink, Calendar, Search, ShieldCheck, Copy, Check, Mail, RefreshCw, Trash2, ShieldAlert, LogOut, Info } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ import {
 
 export default function SuperAdminPage() {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
   const [copied, setCopied] = useState(false);
@@ -39,10 +42,9 @@ export default function SuperAdminPage() {
     return doc(db, "globalAdmins", user.uid);
   }, [db, user?.uid]);
 
-  const { data: globalAdminData, isLoading: isAdminChecking } = useDoc(globalAdminRef);
+  const { data: globalAdminData, isLoading: isAdminChecking, error: adminError } = useDoc(globalAdminRef);
 
   const salonsQuery = useMemoFirebase(() => {
-    // Solo creamos la query si el usuario tiene el permiso detectado
     if (!db || !globalAdminData) return null;
     return query(collection(db, "salons"), orderBy("createdAt", "desc"));
   }, [db, globalAdminData]);
@@ -58,9 +60,14 @@ export default function SuperAdminPage() {
     if (user?.uid) {
       navigator.clipboard.writeText(user.uid);
       setCopied(true);
-      toast({ title: "ID Copiado", description: "Pégalo en la colección globalAdmins." });
+      toast({ title: "ID Copiado" });
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.reload();
   };
 
   const handleDeleteSalon = (salonId: string, salonName: string) => {
@@ -78,13 +85,13 @@ export default function SuperAdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-sm font-medium animate-pulse">Verificando acceso maestro...</p>
+          <p className="text-sm font-medium animate-pulse">Sincronizando con la base de datos...</p>
         </div>
       </div>
     );
   }
 
-  // Si no hay datos de admin, mostramos la pantalla de configuración
+  // Pantalla de configuración si no se detecta el permiso
   if (!globalAdminData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -96,54 +103,59 @@ export default function SuperAdminPage() {
               <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                 <ShieldAlert className="w-10 h-10 text-primary" />
               </div>
-              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase">Panel de Creador</CardTitle>
+              <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">Acceso Maestro Requerido</CardTitle>
               <CardDescription className="text-lg">
-                Para activar tu acceso total, debes registrar tu ID en la base de datos.
+                Sigue estos pasos exactos para activar tu panel global.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pb-10 px-8">
-              <div className="bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20 text-left">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Mail className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Usuario Actual</span>
-                  </div>
-                  <p className="font-mono text-xs bg-background p-3 rounded-xl border truncate">
-                    {user?.email || 'Anónimo'}
-                  </p>
+              <div className="bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20 text-left space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-background rounded-xl border">
+                    <Mail className="w-5 h-5 text-primary" />
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sesión Activa</p>
+                        <p className="font-mono text-xs font-bold">{user?.email || (user?.isAnonymous ? 'Invitado (Anónimo)' : 'Sin Email')}</p>
+                    </div>
+                </div>
 
-                  <div className="flex items-center gap-2 text-primary">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Tu ID Maestro (UID)</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-background border rounded-xl p-2 font-mono text-sm">
-                    <span className="truncate flex-1 text-primary font-bold pl-2">{user?.uid}</span>
-                    <button onClick={copyUid} className="p-2 hover:bg-primary/10 rounded-lg transition-colors">
-                      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
+                <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">1. Copia tu ID Maestro (UID)</p>
+                    <div className="flex items-center gap-2 bg-background border-2 border-primary/20 rounded-xl p-3 font-mono text-sm">
+                        <span className="truncate flex-1 text-primary font-black">{user?.uid}</span>
+                        <Button onClick={copyUid} size="sm" variant="secondary" className="h-8">
+                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                    </div>
+                </div>
 
-                  <div className="pt-4 space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instrucciones en Firebase</p>
-                    <ol className="text-[11px] leading-relaxed list-decimal list-inside space-y-1.5 bg-background p-4 rounded-xl border">
+                <div className="space-y-3 bg-primary/5 p-4 rounded-xl border border-primary/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+                        <Info className="w-3 h-3" /> 2. En tu Consola de Firebase
+                    </p>
+                    <ol className="text-[11px] leading-relaxed list-decimal list-inside space-y-2 font-medium">
                         <li>Ve a <strong>Firestore Database</strong>.</li>
-                        <li>Crea una colección llamada <code>globalAdmins</code>.</li>
-                        <li>Crea un documento cuyo <strong>ID</strong> sea tu UID (el código de arriba).</li>
-                        <li>Añade un campo: <code>role</code> (string) con valor <code>admin</code>.</li>
-                        <li>Guarda y refresca esta página.</li>
+                        <li>Crea una colección llamada: <code className="bg-primary/20 px-1 rounded">globalAdmins</code></li>
+                        <li>Crea un documento con <strong>ID</strong> = (Pega tu UID arriba).</li>
+                        <li>Añade un campo: <strong>Nombre:</strong> <code className="bg-primary/20 px-1 rounded">role</code> | <strong>Valor:</strong> <code className="bg-primary/20 px-1 rounded">admin</code></li>
+                        <li>Haz clic en <strong>Guardar</strong> y refresca esta página.</li>
                     </ol>
-                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button onClick={() => window.location.reload()} className="flex-1 h-12 rounded-xl font-bold">
-                  <RefreshCw className="mr-2 h-4 w-4" /> Verificar Ahora
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={() => window.location.reload()} className="flex-1 h-14 rounded-2xl font-black text-lg shadow-xl uppercase italic">
+                  <RefreshCw className="mr-2 h-5 w-5" /> Verificar Ahora
                 </Button>
-                <Button asChild variant="outline" className="flex-1 h-12 rounded-xl">
-                  <Link href="/">Ir al Inicio</Link>
+                <Button onClick={handleLogout} variant="outline" className="flex-1 h-14 rounded-2xl font-bold">
+                  <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                 </Button>
               </div>
+              
+              {adminError && (
+                  <p className="text-xs text-destructive font-bold bg-destructive/10 p-2 rounded">
+                    Error de conexión: {adminError.message}
+                  </p>
+              )}
             </CardContent>
           </Card>
         </main>
@@ -158,14 +170,14 @@ export default function SuperAdminPage() {
       <main className="flex-grow container mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2 uppercase">Panel Maestro</h1>
-            <p className="text-muted-foreground text-lg">Gestionando {allSalons?.length || 0} negocios registrados.</p>
+            <h1 className="text-5xl font-black font-headline tracking-tighter mb-2 uppercase italic">Panel Maestro</h1>
+            <p className="text-muted-foreground text-lg">Control total de {allSalons?.length || 0} negocios registrados.</p>
           </div>
-          <div className="flex items-center gap-4 bg-primary/10 px-6 py-3 rounded-full border border-primary/20">
-            <Store className="w-6 h-6 text-primary" />
+          <div className="flex items-center gap-4 bg-primary text-primary-foreground px-8 py-4 rounded-2xl shadow-2xl">
+            <Store className="w-8 h-8" />
             <div className="flex flex-col">
-              <span className="font-black text-2xl leading-none">{allSalons?.length || 0}</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-primary/70">Activos</span>
+              <span className="font-black text-3xl leading-none">{allSalons?.length || 0}</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Salones Activos</span>
             </div>
           </div>
         </div>
@@ -183,15 +195,15 @@ export default function SuperAdminPage() {
         {isSalonsLoading ? (
           <div className="flex flex-col items-center justify-center p-32 space-y-4">
             <Loader2 className="w-16 h-16 animate-spin text-primary opacity-20" />
-            <p className="text-muted-foreground font-medium">Cargando base de datos global...</p>
+            <p className="text-muted-foreground font-medium uppercase tracking-widest">Consultando registros globales...</p>
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredSalons.map((salon) => (
-              <Card key={salon.id} className="group hover:border-primary transition-all duration-300 shadow-sm rounded-2xl overflow-hidden border-muted bg-card">
+              <Card key={salon.id} className="group hover:border-primary transition-all duration-300 shadow-sm rounded-3xl overflow-hidden border-muted bg-card">
                 <CardHeader className="pb-4 bg-muted/5 group-hover:bg-primary/5 transition-colors">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                       <Store className="w-6 h-6" />
                     </div>
                     <Badge variant="outline" className="text-[10px] py-1 px-3 uppercase font-black tracking-widest border-primary/20 bg-background">
@@ -201,13 +213,13 @@ export default function SuperAdminPage() {
                   <CardTitle className="text-2xl font-black font-headline leading-tight group-hover:text-primary transition-colors">{salon.name}</CardTitle>
                   <CardDescription className="flex items-center gap-2 font-medium">
                     <Calendar className="w-4 h-4 text-primary" />
-                    {salon.createdAt?.toDate ? format(salon.createdAt.toDate(), "dd MMM yyyy", { locale: es }) : 'Registrado'}
+                    {salon.createdAt?.toDate ? format(salon.createdAt.toDate(), "dd MMM yyyy", { locale: es }) : 'Registro Reciente'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
                   <div className="grid grid-cols-2 gap-4 py-6 border-y border-border/50">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Color</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Branding</span>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full border shadow-inner" style={{ backgroundColor: salon.primaryColor || '#000' }} />
                         <span className="text-xs font-mono font-bold uppercase">{salon.primaryColor || '#000000'}</span>
@@ -222,33 +234,33 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 rounded-xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
+                  <div className="flex gap-3">
+                    <Button variant="outline" size="lg" className="flex-1 rounded-2xl font-bold hover:bg-primary hover:text-primary-foreground" asChild>
                       <Link href={`/book/${salon.id}`} target="_blank">
-                        <ExternalLink className="mr-2 h-4 w-4" /> Visitar
+                        <ExternalLink className="mr-2 h-4 w-4" /> Ver Web
                       </Link>
                     </Button>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="rounded-xl text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="lg" className="rounded-2xl text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-5 w-5" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="rounded-3xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar negocio?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción borrará permanentemente el salón <strong>{salon.name}</strong>. No se puede deshacer.
+                          <AlertDialogTitle className="text-2xl font-black">¿Eliminar este negocio?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-lg">
+                            Esta acción borrará permanentemente el salón <strong>{salon.name}</strong> y todos sus servicios. No se puede deshacer.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogFooter className="gap-2">
+                          <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleDeleteSalon(salon.id, salon.name)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                           >
-                            Eliminar
+                            Eliminar Permanentemente
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -259,8 +271,8 @@ export default function SuperAdminPage() {
             ))}
             {filteredSalons.length === 0 && !isSalonsLoading && (
               <div className="md:col-span-3 text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-muted">
-                <h3 className="text-2xl font-black text-muted-foreground uppercase">Sin resultados</h3>
-                <p className="text-muted-foreground">No hay negocios que coincidan con tu búsqueda.</p>
+                <h3 className="text-2xl font-black text-muted-foreground uppercase italic">Base de datos vacía</h3>
+                <p className="text-muted-foreground">No se encontraron negocios registrados que coincidan con la búsqueda.</p>
               </div>
             )}
           </div>
