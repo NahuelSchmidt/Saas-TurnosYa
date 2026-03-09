@@ -144,7 +144,7 @@ export default function RegisterPage() {
               <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit mb-2">
                 <Store className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-headline">Comienza Gratis</CardTitle>
+              <CardTitle className="text-2xl font-headline">Comenzar Ahora</CardTitle>
               <CardDescription>Crea tu cuenta de administrador ahora.</CardDescription>
             </CardHeader>
             <CardContent>

@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Share2, Settings, BarChart3, CheckCircle2, ArrowRight, Zap, ShieldCheck, PlayCircle } from "lucide-react";
+import { Share2, Settings, BarChart3, ArrowRight } from "lucide-react";
 import BookingFlow from "@/components/booking/BookingFlow";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-5 w-full justify-center pt-6">
                 <Button size="lg" className="h-16 px-12 text-xl font-bold rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95" asChild>
                   <Link href="/register">
-                    Empezar Gratis <ArrowRight className="ml-2 h-6 w-6" />
+                    Comenzar Ahora <ArrowRight className="ml-2 h-6 w-6" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="h-16 px-12 text-xl font-bold rounded-2xl border-2 transition-transform hover:scale-105 active:scale-95" asChild>
@@ -126,7 +126,7 @@ export default function Home() {
               Únete a los cientos de profesionales que ya están ahorrando horas de coordinación cada semana.
             </p>
             <Button size="lg" className="h-20 px-16 text-2xl font-black rounded-[2rem] shadow-2xl transition-all hover:scale-105 bg-background text-foreground hover:bg-background/90" asChild>
-              <Link href="/register">Crear mi Agenda Gratis</Link>
+              <Link href="/register">Crear mi Agenda</Link>
             </Button>
             <p className="mt-10 opacity-60 text-sm font-bold uppercase tracking-widest">Sin tarjetas de crédito. Sin contratos.</p>
           </div>
