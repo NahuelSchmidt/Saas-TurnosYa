@@ -1,14 +1,14 @@
 
 /**
  * TurnosYa - Firestore Security Rules
- * Configured for multi-tenant salon management and public booking.
+ * Configura el acceso para gestión multi-inquilino y reservas públicas.
  */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
+    // --- Funciones de Ayuda ---
 
     function isSignedIn() {
       return request.auth != null;
@@ -19,42 +19,42 @@ service cloud.firestore {
     }
 
     function isGlobalAdmin() {
-      // Verificación maestra: el UID del usuario debe existir en la colección globalAdmins
+      // Verificación maestra: el UID debe existir en globalAdmins
       return isSignedIn() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
     function isSalonAdmin(salonData) {
+      // Verificación robusta de administración de salón
       return isSignedIn() && (
-        (salonData.keys().contains('adminMembers') && salonData.adminMembers[request.auth.uid] == true) || 
-        (salonData.keys().contains('salonAdminMembers') && salonData.salonAdminMembers[request.auth.uid] == true)
+        (salonData.get('adminMembers', {})[request.auth.uid] == true) || 
+        (salonData.get('salonAdminMembers', {})[request.auth.uid] == true)
       );
     }
 
-    // --- Collection Rules ---
+    // --- Reglas de Colecciones ---
 
     match /userProfiles/{userProfileId} {
-      allow get, list: if isOwner(userProfileId) || isGlobalAdmin();
+      allow get: if isSignedIn();
+      allow list: if isGlobalAdmin();
       allow create, update: if isOwner(userProfileId);
-      allow delete: if isOwner(userProfileId) || isGlobalAdmin();
+      allow delete: if isGlobalAdmin();
     }
 
     match /globalAdmins/{userId} {
-      // Permite que cualquier usuario autenticado verifique su propio permiso de admin
       allow get: if isSignedIn() && request.auth.uid == userId;
-      // Solo un admin global puede listar a otros admins
       allow list: if isGlobalAdmin();
       allow write: if false; 
     }
 
     match /salons/{salonId} {
-      // Acceso público para ver detalles del negocio y reservar
+      // Acceso público para ver detalles y reservar
       allow get, list: if true; 
       
-      // Solo usuarios registrados pueden crear un salón
+      // Cualquier usuario registrado puede crear un salón
       allow create: if isSignedIn(); 
       
-      // Solo el dueño del salón o el Admin Global pueden editar/borrar
-      allow update, delete: if resource != null && (isSalonAdmin(resource.data) || isGlobalAdmin());
+      // Permitir actualización si es admin del salón o admin global
+      allow update, delete: if (resource != null && isSalonAdmin(resource.data)) || isGlobalAdmin();
       
       match /services/{serviceId} {
         allow get, list: if true; 
@@ -68,9 +68,9 @@ service cloud.firestore {
     }
 
     match /appointments/{appointmentId} {
-      allow get, list: if isSignedIn() || isGlobalAdmin(); 
+      allow get, list: if isSignedIn(); 
       allow create: if isSignedIn(); 
-      allow update, delete: if isSignedIn() || isGlobalAdmin(); 
+      allow update, delete: if isSignedIn(); 
     }
 
     match /payments/{paymentId} {
