@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, differenceInHours } from "date-fns";
 import { es } from "date-fns/locale";
 import { Trash2, RotateCw, User, Clock, Loader2, MessageSquare } from "lucide-react";
+import { parseFirestoreDate } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +68,8 @@ export function UserAppointments({ tenantId }: UserAppointmentsProps) {
   const notifyCancellation = (appointment: PopulatedAppointment) => {
     if (!business) return;
 
-    const formattedDate = format(new Date(appointment.startTime), "eeee dd 'de' MMMM 'a las' HH:mm'hs'", { locale: es });
+    const dateObj = parseFirestoreDate(appointment.startTime);
+    const formattedDate = format(dateObj, "eeee dd 'de' MMMM 'a las' HH:mm'hs'", { locale: es });
     const serviceNames = appointment.services.map(s => s.name).join(', ');
     
     const message = `¡Cancelación de Turno!
@@ -86,12 +88,12 @@ Profesional: ${appointment.professional?.name || 'N/A'}`;
   }
 
   const upcomingAppointments = appointments
-    .filter(apt => apt.status === 'confirmed' && new Date(apt.startTime) > now)
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    .filter(apt => apt.status === 'confirmed' && parseFirestoreDate(apt.startTime) > now)
+    .sort((a, b) => parseFirestoreDate(a.startTime).getTime() - parseFirestoreDate(b.startTime).getTime());
 
   const pastAppointments = appointments
-    .filter(apt => new Date(apt.startTime) <= now)
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+    .filter(apt => parseFirestoreDate(apt.startTime) <= now)
+    .sort((a, b) => parseFirestoreDate(b.startTime).getTime() - parseFirestoreDate(a.startTime).getTime());
 
   if (loading) {
     return (
@@ -110,15 +112,16 @@ Profesional: ${appointment.professional?.name || 'N/A'}`;
           {upcomingAppointments.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {upcomingAppointments.map(apt => {
-                const canCancel = differenceInHours(new Date(apt.startTime), now) >= 12;
+                const dateObj = parseFirestoreDate(apt.startTime);
+                const canCancel = differenceInHours(dateObj, now) >= 12;
                 return (
                   <Card key={apt.id}>
                     <CardHeader>
                       <CardTitle className="text-xl capitalize">
-                        {format(new Date(apt.startTime), "eeee, dd 'de' MMMM", { locale: es })}
+                        {format(dateObj, "eeee, dd 'de' MMMM", { locale: es })}
                       </CardTitle>
                       <CardDescription>
-                        a las {format(new Date(apt.startTime), "HH:mm")}hs
+                        a las {format(dateObj, "HH:mm")}hs
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
@@ -183,21 +186,24 @@ Profesional: ${appointment.professional?.name || 'N/A'}`;
           <h3 className="text-lg font-semibold mb-4">Citas Anteriores</h3>
           {pastAppointments.length > 0 ? (
             <div className="space-y-3">
-              {pastAppointments.map(apt => (
-                <Card key={apt.id} className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-semibold capitalize">{format(new Date(apt.startTime), "PPP", { locale: es })}</p>
-                    <p className="text-sm text-muted-foreground">{apt.services.map(s => s.name).join(', ')} con {apt.professional?.name}</p>
-                  </div>
-                  <Badge variant={apt.status === 'completed' ? 'secondary' : apt.status === 'confirmed' ? 'outline' : 'destructive'}>{
-                    {
-                      completed: 'Completado',
-                      confirmed: 'Confirmado',
-                      cancelled: 'Cancelado'
-                    }[apt.status] ?? apt.status
-                  }</Badge>
-                </Card>
-              ))}
+              {pastAppointments.map(apt => {
+                const dateObj = parseFirestoreDate(apt.startTime);
+                return (
+                  <Card key={apt.id} className="flex items-center justify-between p-4">
+                    <div>
+                      <p className="font-semibold capitalize">{format(dateObj, "PPP", { locale: es })}</p>
+                      <p className="text-sm text-muted-foreground">{apt.services.map(s => s.name).join(', ')} con {apt.professional?.name}</p>
+                    </div>
+                    <Badge variant={apt.status === 'completed' ? 'secondary' : apt.status === 'confirmed' ? 'outline' : 'destructive'}>{
+                      {
+                        completed: 'Completado',
+                        confirmed: 'Confirmado',
+                        cancelled: 'Cancelado'
+                      }[apt.status] ?? apt.status
+                    }</Badge>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <p className="text-muted-foreground">No tienes citas anteriores.</p>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -5,12 +6,12 @@ import { useAppointments } from '@/hooks/use-appointments';
 import { useServices } from '@/hooks/use-services';
 import { useProfessionals } from '@/hooks/use-professionals';
 import { Appointment, Service, Professional } from '@/lib/data';
-import { format, isToday, isThisWeek, parseISO } from 'date-fns';
+import { format, isToday, isThisWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Calendar, User, Clock, Ban } from 'lucide-react';
+import { Loader2, User, Clock, Ban } from 'lucide-react';
+import { parseFirestoreDate } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +53,7 @@ export function ProfessionalAgenda({ tenantId }: ProfessionalAgendaProps) {
           services: (apt.serviceIds || []).map(id => servicesList.find(s => s.id === id)).filter(Boolean) as Service[],
           professional: professionalsList.find(p => p.id === apt.professionalId)
         }))
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        .sort((a, b) => parseFirestoreDate(a.startTime).getTime() - parseFirestoreDate(b.startTime).getTime());
       setAgenda(populated);
     }
   }, [appointments, services, professionals, loading]);
@@ -61,8 +62,8 @@ export function ProfessionalAgenda({ tenantId }: ProfessionalAgendaProps) {
       cancelAppointment(appointmentId);
   }
 
-  const todayAppointments = agenda.filter(apt => apt.status === 'confirmed' && isToday(new Date(apt.startTime)));
-  const thisWeekAppointments = agenda.filter(apt => apt.status === 'confirmed' && !isToday(new Date(apt.startTime)) && isThisWeek(new Date(apt.startTime), { weekStartsOn: 1 }));
+  const todayAppointments = agenda.filter(apt => apt.status === 'confirmed' && isToday(parseFirestoreDate(apt.startTime)));
+  const thisWeekAppointments = agenda.filter(apt => apt.status === 'confirmed' && !isToday(parseFirestoreDate(apt.startTime)) && isThisWeek(parseFirestoreDate(apt.startTime), { weekStartsOn: 1 }));
 
   if (loading) {
     return (
@@ -81,34 +82,37 @@ export function ProfessionalAgenda({ tenantId }: ProfessionalAgendaProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {todayAppointments.length > 0 ? (
-            todayAppointments.map(apt => (
-              <Card key={apt.id} className="p-4">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                        <p className="font-bold text-lg">{format(new Date(apt.startTime), 'HH:mm')}hs - {apt.customerName}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2"><User className="w-4 h-4"/>{apt.professional?.name}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4"/>{apt.services.map(s => s.name).join(', ')}</p>
-                    </div>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm"><Ban className="mr-2 h-4 w-4"/>No disponible</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>¿Marcar como no disponible?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción cancelará el turno y el horario dejará de estar disponible. Se notificará al cliente.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Volver</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleBlock(apt.id)}>Confirmar</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                     </AlertDialog>
-                </div>
-              </Card>
-            ))
+            todayAppointments.map(apt => {
+              const dateObj = parseFirestoreDate(apt.startTime);
+              return (
+                <Card key={apt.id} className="p-4">
+                  <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                          <p className="font-bold text-lg">{format(dateObj, 'HH:mm')}hs - {apt.customerName}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2"><User className="w-4 h-4"/>{apt.professional?.name}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4"/>{apt.services.map(s => s.name).join(', ')}</p>
+                      </div>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm"><Ban className="mr-2 h-4 w-4"/>No disponible</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Marcar como no disponible?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Esta acción cancelará el turno y el horario dejará de estar disponible. Se notificará al cliente.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Volver</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleBlock(apt.id)}>Confirmar</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                       </AlertDialog>
+                  </div>
+                </Card>
+              );
+            })
           ) : (
             <p className="text-muted-foreground">No hay turnos agendados para hoy.</p>
           )}
@@ -121,35 +125,38 @@ export function ProfessionalAgenda({ tenantId }: ProfessionalAgendaProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {thisWeekAppointments.length > 0 ? (
-            thisWeekAppointments.map(apt => (
-                <Card key={apt.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                            <p className="font-bold text-lg capitalize">{format(new Date(apt.startTime), "eeee dd, HH:mm'hs'", {locale: es})}</p>
-                            <p className="text-sm text-muted-foreground">{apt.customerName}</p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-2"><User className="w-4 h-4"/>{apt.professional?.name}</p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4"/>{apt.services.map(s => s.name).join(', ')}</p>
-                        </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm"><Ban className="mr-2 h-4 w-4"/>No disponible</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>¿Marcar como no disponible?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción cancelará el turno y el horario dejará de estar disponible. Se notificará al cliente.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Volver</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleBlock(apt.id)}>Confirmar</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-              </Card>
-            ))
+            thisWeekAppointments.map(apt => {
+                const dateObj = parseFirestoreDate(apt.startTime);
+                return (
+                  <Card key={apt.id} className="p-4">
+                      <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                              <p className="font-bold text-lg capitalize">{format(dateObj, "eeee dd, HH:mm'hs'", {locale: es})}</p>
+                              <p className="text-sm text-muted-foreground">{apt.customerName}</p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-2"><User className="w-4 h-4"/>{apt.professional?.name}</p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4"/>{apt.services.map(s => s.name).join(', ')}</p>
+                          </div>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm"><Ban className="mr-2 h-4 w-4"/>No disponible</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Marcar como no disponible?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Esta acción cancelará el turno y el horario dejará de estar disponible. Se notificará al cliente.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Volver</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleBlock(apt.id)}>Confirmar</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                          </AlertDialog>
+                      </div>
+                </Card>
+              );
+            })
           ) : (
             <p className="text-muted-foreground">No hay más turnos agendados para esta semana.</p>
           )}

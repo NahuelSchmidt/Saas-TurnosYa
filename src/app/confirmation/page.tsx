@@ -15,6 +15,7 @@ import { useProfessionals } from "@/hooks/use-professionals";
 import type { Appointment, Service, Professional } from "@/lib/data";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseFirestoreDate } from "@/lib/utils";
 
 interface PopulatedAppointment extends Omit<Appointment, 'serviceIds' | 'professionalId'> {
   services: Service[];
@@ -51,7 +52,8 @@ function ConfirmationContent() {
   const openWhatsAppReminder = () => {
     if (!appointment) return;
     const { customerPhone, customerName, professional, startTime, services } = appointment;
-    const formattedDate = format(new Date(startTime), "eeee dd 'de' MMMM 'a las' HH:mm'hs'", { locale: es });
+    const dateObj = parseFirestoreDate(startTime);
+    const formattedDate = format(dateObj, "eeee dd 'de' MMMM 'a las' HH:mm'hs'", { locale: es });
     const serviceNames = services.map(s => s.name).join(', ');
     const message = `Hola ${customerName}, te recordamos tu turno el ${formattedDate} con ${professional?.name} para ${serviceNames}. ¡Te esperamos en TurnosYa!`;
     const url = `https://wa.me/${customerPhone.replace(/\s/g, '')}?text=${encodeURIComponent(message)}`;
@@ -72,6 +74,8 @@ function ConfirmationContent() {
       </div>
     );
   }
+
+  const appointmentDate = parseFirestoreDate(appointment.startTime);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -97,7 +101,7 @@ function ConfirmationContent() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-primary" />
-                  <span><strong>Fecha:</strong> {format(new Date(appointment.startTime), "PPP 'a las' HH:mm", { locale: es })}</span>
+                  <span><strong>Fecha:</strong> {format(appointmentDate, "PPP 'a las' HH:mm", { locale: es })}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-primary" />
