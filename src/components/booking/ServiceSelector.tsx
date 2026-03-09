@@ -46,7 +46,7 @@ export default function ServiceSelector({
                             <p className="font-medium">{service.name}</p>
                             <p className="text-sm text-muted-foreground">{service.description}</p>
                         </div>
-                        <Button onClick={openWhatsApp}>
+                        <Button onClick={openWhatsApp} className="text-white">
                             <MessageSquare className="mr-2 h-4 w-4" /> Cotizar
                         </Button>
                     </div>

@@ -235,7 +235,7 @@ export default function BookingFlow({ tenantId }: BookingFlowProps) {
             <div className="mt-8 flex flex-col gap-3">
               <Button
                 size="lg"
-                className="h-14 font-bold text-lg rounded-xl shadow-lg"
+                className="h-14 font-bold text-lg rounded-xl shadow-lg text-white"
                 onClick={nextStep}
                 disabled={
                   isProcessing ||
