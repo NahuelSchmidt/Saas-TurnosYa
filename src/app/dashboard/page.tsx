@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserAppointments } from "@/components/dashboard/UserAppointments";
 import { AdminSettings } from "@/components/dashboard/AdminSettings";
 import { ProfessionalAgenda } from "@/components/dashboard/ProfessionalAgenda";
-import { DollarSign, Calendar, Users, Activity, LogIn, LogOut, Loader2, AlertCircle } from "lucide-react";
+import { SubscriptionPaywall } from "@/components/dashboard/SubscriptionPaywall";
+import { DollarSign, Calendar, Users, Activity, LogIn, LogOut, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -50,7 +51,6 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Memoized query to find salons where the current user is an admin
   const salonsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || user.isAnonymous) return null;
     return query(
@@ -63,6 +63,9 @@ export default function DashboardPage() {
   
   const currentSalon = userSalons?.[0];
   const tenantId = currentSalon?.id;
+
+  // Verificación de suscripción
+  const isSubscriptionActive = currentSalon?.subscriptionStatus === 'active';
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -91,7 +94,6 @@ export default function DashboardPage() {
     );
   }
 
-  // A real admin is someone signed in but NOT anonymously
   const isRealUser = user && !user.isAnonymous;
 
   return (
@@ -153,10 +155,18 @@ export default function DashboardPage() {
                  <CardContent><Button asChild className="w-full"><Link href="/register">Configurar mi Salón</Link></Button></CardContent>
               </Card>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 relative">
+                    {/* BLOQUEO POR SUSCRIPCIÓN */}
+                    {!isSubscriptionActive && (
+                      <SubscriptionPaywall salonId={tenantId} salonName={currentSalon?.name} />
+                    )}
+
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-lg border">
                       <div>
-                        <h2 className="text-xl font-bold font-headline">{currentSalon?.name}</h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-bold font-headline">{currentSalon?.name}</h2>
+                          {isSubscriptionActive && <ShieldCheck className="w-4 h-4 text-primary" />}
+                        </div>
                         <p className="text-xs text-muted-foreground uppercase">ID de Salón: {tenantId}</p>
                       </div>
                       <Button variant="ghost" size="sm" onClick={handleLogout} className="text-destructive"><LogOut className="mr-2 h-4 w-4"/>Cerrar Sesión</Button>
