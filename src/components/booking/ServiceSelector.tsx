@@ -58,7 +58,9 @@ export default function ServiceSelector({
                     key={service.id}
                     onClick={() => onSelectService(service)}
                     className={`flex items-center space-x-4 rounded-lg border p-4 cursor-pointer transition-all ${
-                        isSelected ? "bg-primary/10 border-primary shadow-md" : "hover:bg-accent/50"
+                        isSelected 
+                          ? "bg-primary/20 border-primary ring-2 ring-primary/20 shadow-md" 
+                          : "border-border hover:bg-accent/50"
                     }`}
                 >
                     <Checkbox
