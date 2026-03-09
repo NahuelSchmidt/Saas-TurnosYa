@@ -22,15 +22,12 @@ export function SubscriptionPaywall({ salonId, salonName }: SubscriptionPaywallP
 
   const handleSubscribe = () => {
     setIsLoading(true);
-    // En una implementación real, aquí llamarías a un Server Action que cree
-    // la preferencia de suscripción en Mercado Pago (Preapproval).
-    
-    // Simulamos la redirección y el éxito para el prototipo
+    // Simulación de redirección a Mercado Pago
     setTimeout(() => {
       const salonRef = doc(db, "salons", salonId);
       updateDocumentNonBlocking(salonRef, {
         subscriptionStatus: 'active',
-        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         updatedAt: serverTimestamp()
       });
       
@@ -43,17 +40,17 @@ export function SubscriptionPaywall({ salonId, salonName }: SubscriptionPaywallP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md p-4">
       <Card className="max-w-xl w-full shadow-2xl border-primary/20 animate-in zoom-in-95 duration-300">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
             <ShieldCheck className="w-12 h-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-black font-headline tracking-tighter uppercase italic">
-            Tu suscripción ha vencido
+          <CardTitle className="text-4xl font-black font-headline tracking-tighter uppercase italic">
+            Suscripción Pendiente
           </CardTitle>
           <CardDescription className="text-lg">
-            Para seguir gestionando <strong>{salonName}</strong>, necesitas activar tu plan mensual.
+            Para gestionar <strong>{salonName}</strong>, necesitas activar o renovar tu plan mensual.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 p-8">
@@ -81,13 +78,13 @@ export function SubscriptionPaywall({ salonId, salonName }: SubscriptionPaywallP
             <Button 
               onClick={handleSubscribe} 
               disabled={isLoading}
-              className="h-16 rounded-2xl text-xl font-black uppercase italic shadow-xl"
+              className="h-20 rounded-2xl text-2xl font-black uppercase italic shadow-2xl transition-transform hover:scale-105"
             >
               {isLoading ? <Loader2 className="animate-spin mr-2" /> : <CreditCard className="mr-2" />}
-              Suscribirme con Mercado Pago
+              Pagar con Mercado Pago
             </Button>
             <p className="text-[10px] text-center text-muted-foreground uppercase font-bold tracking-widest">
-              Pago 100% seguro. Cancela cuando quieras.
+              Cancela tu suscripción cuando quieras desde el panel de Mercado Pago.
             </p>
           </div>
         </CardContent>
